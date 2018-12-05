@@ -103,16 +103,17 @@ void ofApp::setup(){
     gravF = new GravityForce(ofVec3f(0,-50,0));
     radF = new ImpulseRadialForce(100.0);
     
-    emitter.sys->addForce(turb2);
-    emitter.sys->addForce(gravF);
-    emitter.sys->addForce(radF);
-    
-    emitter.setVelocity(ofVec3f(0,0,0));
-    emitter.setOneShot(true);
-    emitter.setEmitterType(DiskEmitter);
-    emitter.setGroupSize(10);
-    emitter.setLifespan(.5);
-    //emitter.particleRadius = 2;
+    //instantiate the force for the exhaust and add it to the exhaust's particle system.
+    exhaustForce = new ImpulseRadialForce(50);
+    exhaust.sys->addForce(exhaustForce);
+
+    //set the emitter's variables
+    exhaust.setVelocity(ofVec3f(0,-4,0));
+    exhaust.setEmitterType(DiskEmitter);
+    exhaust.setGroupSize(75);
+    exhaust.setLifespan(.8);
+    exhaust.setParticleRadius(.01);
+    exhaust.setRate(35);
     
     prover.addForce(turbForce);
     prover.addForce(thrust);
@@ -124,12 +125,12 @@ void ofApp::setup(){
 //
 void ofApp::update() {
     prover.update();
-    emitter.update();
     
     assigner = prover.particles[0].position;
     lander.setPosition(assigner.x , assigner.y , assigner.z);
-    emitter.setPosition(assigner - ofVec3f(0,0.02,0));
-    
+    //used the particle's position for the emitter because I wanted to change the y component to make it closer to the exhaust
+    exhaust.setPosition(ofVec3f(sys.particles[0].position.x, sys.particles[0].position.y + .25, sys.particles[0].position.z));
+    exhaust.update();
 }
 //--------------------------------------------------------------
 void ofApp::draw(){
@@ -210,7 +211,7 @@ void ofApp::draw(){
 	*/
     //prover.draw();
     lander.drawFaces();
-    emitter.draw();
+    exhaust.draw();
     
 	ofPopMatrix();
 	cam.end();
@@ -295,14 +296,14 @@ void ofApp::keyPressed(int key) {
 	case OF_KEY_DEL:
 		break;
         case OF_KEY_UP:
+	    exhaust.sys->reset();
+	    exhaust.start();
             // cout << lander.getPosition();
             // Using alt key to determine whether we change z or x
             
             if (!bAltKeyDown){
                 prover.reset();
                 thrust->set(ofVec3f(0,SPD,0));
-                emitter.sys->reset();
-                emitter.start();
             }
             else{
                 prover.reset();
@@ -311,6 +312,8 @@ void ofApp::keyPressed(int key) {
             }
             break;
         case OF_KEY_DOWN:
+	    exhaust.sys->reset();
+	    exhaust.start();
             if(!bAltKeyDown){
                 prover.reset();
                 thrust->set(ofVec3f(0,-SPD,0));
@@ -323,10 +326,14 @@ void ofApp::keyPressed(int key) {
             
             break;
         case OF_KEY_LEFT:
+	    exhaust.sys->reset();
+	    exhaust.start();
             prover.reset();
             thrust->set(ofVec3f(-SPD,0,0));
             break;
         case OF_KEY_RIGHT:
+	    exhaust.sys->reset();
+	    exhaust.start();
             prover.reset();
             thrust->set(ofVec3f(SPD,0,0));
             break;
@@ -364,6 +371,7 @@ void ofApp::keyReleased(int key) {
     case OF_KEY_LEFT:
     case OF_KEY_UP:
     case OF_KEY_DOWN:
+	exhaust.stop();
         prover.reset();
         thrust->set(ofVec3f(0,0,0));
         break;
