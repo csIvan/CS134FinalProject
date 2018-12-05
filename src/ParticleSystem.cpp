@@ -127,8 +127,7 @@ void ImpulseRadialForce::updateForce(Particle * particle) {
 	// the force is only added once after it is triggered.
 	//
     
-    particle->position += ofVec3f(ofRandom(-.2,.2), 0, ofRandom(-.2,.2));
-	ofVec3f dir = ofVec3f(0, -3, 0);
+	ofVec3f dir = ofVec3f(ofRandom(-1, 1), ofRandom(-height/2.0, height/2.0), ofRandom(-1, 1));
 	particle->forces += dir.getNormalized() * magnitude;
 }
 
