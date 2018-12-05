@@ -80,10 +80,6 @@ class ofApp : public ofBaseApp{
     ImpulseRadialForce *exhaustForce;
     ParticleEmitter exhaust;
     
-    TurbulenceForce *turb2;
-    GravityForce *gravF;
-    ImpulseRadialForce *radF;
-    
     Thruster *thrust;
     
     
