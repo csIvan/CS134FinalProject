@@ -96,12 +96,7 @@ void ofApp::setup(){
     turbForce = new TurbulenceForce(ofVec3f(-0.7,-0.7,-0.7),ofVec3f(0.7,0.7,0.7));
     
     // setting up the vectors that move the particle
-    thrustUP = new Thruster(ofVec3f(0,SPD,0));
-    thrustDN = new Thruster(ofVec3f(0,-SPD,0));
-    thrustL = new Thruster(ofVec3f(-SPD,0,0));
-    thrustR = new Thruster(ofVec3f(SPD,0,0));
-    thrustF = new Thruster(ofVec3f(0,0,SPD));
-    thrustB = new Thruster(ofVec3f(0,0,-SPD));
+    thrust = new Thruster(ofVec3f(0,0,0));
     
     // exhaust particles
     turb2 = new TurbulenceForce(ofVec3f(-2,-2,-2),ofVec3f(2,2,2));
@@ -120,6 +115,7 @@ void ofApp::setup(){
     //emitter.particleRadius = 2;
     
     prover.addForce(turbForce);
+    prover.addForce(thrust);
     
 }
 
@@ -304,35 +300,35 @@ void ofApp::keyPressed(int key) {
             
             if (!bAltKeyDown){
                 prover.reset();
-                prover.addForce(thrustUP);
+                thrust->set(ofVec3f(0,SPD,0));
                 emitter.sys->reset();
                 emitter.start();
             }
             else{
                 prover.reset();
-                prover.addForce(thrustF);
+                thrust->set(ofVec3f(0,0,SPD));
                 
             }
             break;
         case OF_KEY_DOWN:
             if(!bAltKeyDown){
                 prover.reset();
-                prover.addForce(thrustDN);
+                thrust->set(ofVec3f(0,-SPD,0));
             }
             
             else{
                 prover.reset();
-                prover.addForce(thrustB);
+                thrust->set(ofVec3f(0,0,-SPD));
             }
             
             break;
         case OF_KEY_LEFT:
             prover.reset();
-            prover.addForce(thrustL);
+            thrust->set(ofVec3f(-SPD,0,0));
             break;
         case OF_KEY_RIGHT:
             prover.reset();
-            prover.addForce(thrustR);
+            thrust->set(ofVec3f(SPD,0,0));
             break;
         default:
             break;
@@ -364,6 +360,13 @@ void ofApp::keyReleased(int key) {
 		break;
 	case OF_KEY_SHIFT:
 		break;
+    case OF_KEY_RIGHT:
+    case OF_KEY_LEFT:
+    case OF_KEY_UP:
+    case OF_KEY_DOWN:
+        prover.reset();
+        thrust->set(ofVec3f(0,0,0));
+        break;
 	default:
 		break;
 
@@ -390,9 +393,13 @@ void ofApp::mousePressed(int x, int y, int button) {
 	// record the timer for when the selection is made
 	timer = ofGetElapsedTimeMillis();
 
+    
+    
 	// create TreeNode to serve as the returned node that intersect() uses to mark the selection
 	TreeNode selectionNode;
 	octree.intersect(ray, octree.root, selectionNode);
+    
+    bPointSelected = false;
 
 	// if the selectionNode's size is greater than 0, set bPointSelected to true, so that it 
 	// draws the sphere in the location that was selected.

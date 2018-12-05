@@ -37,6 +37,7 @@ class ofApp : public ofBaseApp{
 		void drawBox(const Box &box);
 		Box meshBounds(const ofMesh &);
 		void subDivideBox8(const Box &b, vector<Box> & boxList);
+    void altRayDistance();
 
 		bool mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f &point);
 
@@ -82,13 +83,7 @@ class ofApp : public ofBaseApp{
     GravityForce *gravF;
     ImpulseRadialForce *radF;
     
-    
-    Thruster *thrustUP;
-    Thruster *thrustDN;
-    Thruster *thrustL;
-    Thruster *thrustR;
-    Thruster *thrustF;
-    Thruster *thrustB;
+    Thruster *thrust;
     
     
     TurbulenceForce *turbForce;
