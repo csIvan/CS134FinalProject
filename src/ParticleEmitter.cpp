@@ -44,7 +44,7 @@ void ParticleEmitter::init() {
 	type = DirectionalEmitter;
 	groupSize = 1;
 	damping = .99;
-	particleColor = ofColor::red;
+	particleColor = ofColor::orangeRed;
 	position = ofVec3f(0, 0, 0);
 }
 
@@ -56,11 +56,12 @@ void ParticleEmitter::draw() {
 		case DirectionalEmitter:
 			ofDrawSphere(position, radius/10);  // just draw a small sphere for point emitters 
 			break;
-        case DiskEmitter:
 		case SphereEmitter:
 		case RadialEmitter:
 			ofDrawSphere(position, radius/10);  // just draw a small sphere as a placeholder
 			break;
+		case DiskEmitter:
+			//ofDrawSphere(position, radius / 10);
 		default:
 			break;
 		}
@@ -133,14 +134,12 @@ void ParticleEmitter::spawn(float time) {
 		particle.velocity = velocity;
 		particle.position.set(position);
 		break;
-    case DiskEmitter:
-        {
-            ofVec3f dir = ofVec3f(0, ofRandom(-1, 1), 0);
-            float speed = velocity.length();
-            particle.velocity = dir.getNormalized() * speed;
-            particle.position.set(position);
-        }
-        break;
+	case DiskEmitter:	//new emitter type: DiskEmitter
+		ofVec3f dir = ofVec3f(ofRandom(-.1,.1), -1.5, ofRandom(-.1, .1));
+		float speed = velocity.length();
+		particle.velocity = dir * speed;
+		//setting the position for the particles in the emitter, random positions for the emitter to emit disk-like emissions.
+		particle.position.set(ofVec3f(ofRandom(position.x-.16, position.x + .16), ofRandom(position.y-.04, position.y+.04), ofRandom(position.z-.16, position.z + .16)));
 	
 	}
 
