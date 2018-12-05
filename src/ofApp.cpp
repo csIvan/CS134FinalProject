@@ -97,11 +97,7 @@ void ofApp::setup(){
     
     // setting up the vectors that move the particle
     thrust = new Thruster(ofVec3f(0,0,0));
-    
-    // exhaust particles
-    turb2 = new TurbulenceForce(ofVec3f(-2,-2,-2),ofVec3f(2,2,2));
-    gravF = new GravityForce(ofVec3f(0,-50,0));
-    radF = new ImpulseRadialForce(100.0);
+
     
     //instantiate the force for the exhaust and add it to the exhaust's particle system.
     exhaustForce = new ImpulseRadialForce(50);
@@ -129,7 +125,7 @@ void ofApp::update() {
     assigner = prover.particles[0].position;
     lander.setPosition(assigner.x , assigner.y , assigner.z);
     //used the particle's position for the emitter because I wanted to change the y component to make it closer to the exhaust
-    exhaust.setPosition(ofVec3f(sys.particles[0].position.x, sys.particles[0].position.y + .25, sys.particles[0].position.z));
+    exhaust.setPosition(ofVec3f(prover.particles[0].position.x, prover.particles[0].position.y + .25, prover.particles[0].position.z));
     exhaust.update();
 }
 //--------------------------------------------------------------
