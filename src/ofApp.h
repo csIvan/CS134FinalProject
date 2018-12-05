@@ -76,8 +76,9 @@ class ofApp : public ofBaseApp{
     ParticleSystem prover;
     Particle par;
     ofVec3f assigner;
-    
-    ParticleEmitter emitter;
+	
+    ImpulseRadialForce *exhaustForce;
+    ParticleEmitter exhaust;
     
     TurbulenceForce *turb2;
     GravityForce *gravF;
