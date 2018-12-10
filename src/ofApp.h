@@ -72,7 +72,10 @@ class ofApp : public ofBaseApp{
     ofxAssimpModelLoader lander;
     ofImage backgroundImage;
     ofCamera *theCam = NULL;
-    ofCamera topCam;
+    ofCamera trackingCam;
+    ofCamera sideCam;
+    ofCamera downCam;
+	
     
     const float SPD = 2;
     ofPoint posUpdater;
