@@ -38,6 +38,8 @@ class ofApp : public ofBaseApp{
 		Box meshBounds(const ofMesh &);
 		void subDivideBox8(const Box &b, vector<Box> & boxList);
     void altRayDistance();
+    void collisionDect();
+    void resCollision();
 
 		bool mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f &point);
 
@@ -84,7 +86,7 @@ class ofApp : public ofBaseApp{
 	ImpulseRadialForce *exhaustForce;
     ParticleEmitter exhaust;
     
-    ParticleEmitter emitter;
+    
     
     TurbulenceForce *turb2;
     GravityForce *gravF;
@@ -97,7 +99,14 @@ class ofApp : public ofBaseApp{
     bool bBackgroundLoaded = false;
     bool bLanderLoaded = false;
     
+    Box shipBox;
+    const float shipH = 1.75;
+    const float shipW = 3.4;
+    const float shipL = 3.4;
     
+    Vector3 boxPts[6];
     
+    bool colDetected = false;
+    ImpulseForce *resForce;
 		
 };

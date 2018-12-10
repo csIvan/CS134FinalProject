@@ -26,8 +26,6 @@
 #include "ofApp.h"
 #include "Util.h"
 
-
-
 //--------------------------------------------------------------
 // setup scene, lighting, state and load geometry
 //
@@ -52,7 +50,7 @@ void ofApp::setup(){
 	//
 	initLightingAndMaterials();
 
-	mars.loadModel("geo/mars-low-v2.obj");
+	mars.loadModel("geo/terrain.obj");
 	mars.setScaleNormalization(false);
 
 	boundingBox = meshBounds(mars.getMesh(0));
@@ -102,8 +100,9 @@ void ofApp::setup(){
     
     // exhaust particles
     turb2 = new TurbulenceForce(ofVec3f(-2,-2,-2),ofVec3f(2,2,2));
-    gravF = new GravityForce(ofVec3f(0,-50,0));
+    gravF = new GravityForce(ofVec3f(0,-.09,0));
     radF = new ImpulseRadialForce(100.0);
+    resForce = new ImpulseForce();
 
     exhaustForce = new ImpulseRadialForce(50);
     exhaust.sys->addForce(exhaustForce);
@@ -111,7 +110,7 @@ void ofApp::setup(){
     //set the emitter's variables
     exhaust.setVelocity(ofVec3f(0,-4,0));
     exhaust.setEmitterType(DiskEmitter);
-    exhaust.setGroupSize(75);
+    exhaust.setGroupSize(2);
     exhaust.setLifespan(.8);
     exhaust.setParticleRadius(.01);
     exhaust.setRate(35);
@@ -119,8 +118,15 @@ void ofApp::setup(){
     
     prover.addForce(turbForce);
     prover.addForce(thrust);
+    prover.addForce(resForce);
+    prover.addForce(gravF);
     
-	
+    shipBox = Box(Vector3(-1,-1,-1),Vector3(1,1,1));
+    
+    prover.particles[0].position = ofVec3f(0,90,0);
+    cam.setPosition(ofVec3f(0,50,0));
+    
+	//Vector3 boxPts[8];
 }
 
 //--------------------------------------------------------------
@@ -134,6 +140,20 @@ void ofApp::update() {
     assigner = prover.particles[0].position;
     lander.setPosition(assigner.x , assigner.y , assigner.z);
     altRayDistance();
+    
+    
+    // updates the collision box of the space ship
+    shipBox.parameters[0] = Vector3(assigner.x , assigner.y , assigner.z) + Vector3(-1.7,0,-1.7);
+    shipBox.parameters[1] =Vector3(assigner.x , assigner.y , assigner.z) + Vector3(1.7,1.75,1.7);
+    // dimension of our shipBox is 3.4 x 1.75. 3.4
+
+    collisionDect();
+    
+    if (colDetected == true){
+        turbForce->set(ofVec3f(0,0,0), ofVec3f(0,0,0));
+        resCollision();
+    }
+
     
 }
 //--------------------------------------------------------------
@@ -213,7 +233,14 @@ void ofApp::draw(){
 	for (int i = 0; i < level3.size(); i++)
 		drawBox(level3[i]);
 	*/
-
+    
+    
+    //drawBox(shipBox);
+    for(int i = 0; i <6; i++)
+        ofDrawSphere(boxPts[i].x(),boxPts[i].y(),boxPts[i].z(),.05);
+        
+    
+    
     lander.drawFaces();
     exhaust.draw();
 	ofPopMatrix();
@@ -273,6 +300,21 @@ void ofApp::keyPressed(int key) {
 	case 'H':
 	case 'h':
 		break;
+    case 'i':
+        {
+            /*
+             // For wall collisions
+            ofVec3f vel = prover.particles[0].velocity;
+            vel.x *= -ofGetFrameRate();
+            vel.z *= -ofGetFrameRate();
+            resForce->apply(vel);
+             */
+             // For floor collisions
+             ofVec3f vel = prover.particles[0].velocity;
+             resForce->apply(-ofGetFrameRate()*vel);
+            
+            break;
+        }
 	case 'r':
 		cam.reset();
 		break;
@@ -369,9 +411,11 @@ void ofApp::keyReleased(int key) {
 		break;
 	case OF_KEY_SHIFT:
 		break;
+    case OF_KEY_UP:
+            exhaust.sys->reset();
+        exhaust.stop();
     case OF_KEY_RIGHT:
     case OF_KEY_LEFT:
-    case OF_KEY_UP:
     case OF_KEY_DOWN:
         prover.reset();
         thrust->set(ofVec3f(0,0,0));
@@ -683,9 +727,57 @@ void ofApp::altRayDistance(){
 
         ofVec3f resRay = rayPoint - altPoint;
         altitude = resRay.y;
+    }
+}
 
+void ofApp::collisionDect(){
+
+    if(colDetected == false){
+        
+        ofVec3f vel = prover.particles[0].velocity;
+        if (vel.y > 0) return;
+        
+        //gets the center of each box face
+        boxPts[0] = shipBox.max() + Vector3(-shipW/2,0,-shipL/2);
+        boxPts[1] = shipBox.min() + Vector3(0,shipH/2,shipL/2);
+        boxPts[2] = shipBox.min() + Vector3(shipW/2,shipH/2,0);
+        boxPts[3] = shipBox.max() + Vector3(0,-shipH/2,-shipL/2);
+        boxPts[4] = shipBox.max() + Vector3(-shipW/2, -shipH/2,0);
+        boxPts[5] = shipBox.min() + Vector3(shipW/2,0,shipL/2);
+    
+        int i = 0;
+        
+        TreeNode selectionNode;
+        
+        while( i < 8 && colDetected == false){
+            
+            octree.intersect(boxPts[i], octree.root, selectionNode);
+            if(selectionNode.points.size() > 0){
+                cout << "Collision Detected" << endl;
+                colDetected = true;
+            }
+            else i++;
+        }
+    }
+}
+
+void ofApp::resCollision(){
+    
+    ofVec3f vel = prover.particles[0].velocity;
+    if (vel.y == 0){
+        return;
     }
     
+    ofVec3f n = vel;
+    n.normalize();
+    ofVec3f n2 = n;
+    n2.x *= -1;
+    float dot = (-vel.x * n.x) + (-vel.y * n.y) + (-vel.z * n.z);
+    ofVec3f resVec = 1.2 * dot * n;
     
+    resForce->apply(ofGetFrameRate()*resVec);
+    //resForce->apply(ofGetFrameRate()*resVec);
+    cout << "ResForce applied" << endl;
+    colDetected = false;
     
 }

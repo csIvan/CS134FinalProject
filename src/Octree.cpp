@@ -203,5 +203,26 @@ bool Octree::intersect(const Ray &ray, const TreeNode & node, TreeNode & nodeRtn
 	return false;
 }
 
+bool Octree::intersect(const Vector3 &pt, const TreeNode & node, TreeNode & nodeRtn) {
+    // checks to see if a point is intersects with the node
+    Ray ray = Ray(pt,Vector3(0,0,0));
+    
+    if(node.box.intersect(ray, -7000, 7000)){
+        
+        //if it is a nodeleaf, then set the nodeRtn and return true
+        if (node.children.size() == 0) {
+            nodeRtn = node;
+            return true;
+        }
+        else {//otherwise recursive call until base case is reached
+            for (int i = 0; i < node.children.size(); i++) {
+                intersect(ray, node.children[i], nodeRtn);
+            }
+        }
+    }
+    
+    
+    return false;
+}
 
 
