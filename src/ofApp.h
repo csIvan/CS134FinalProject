@@ -89,7 +89,7 @@ class ofApp : public ofBaseApp{
 	ImpulseRadialForce *exhaustForce;
     ParticleEmitter exhaust;
     
-    
+    ofLight keyLight;
     
     TurbulenceForce *turb2;
     GravityForce *gravF;
