@@ -95,6 +95,18 @@ void ofApp::setup(){
     sideCam.setFov(90);
     downCam.setFov(90);
     downCam.lookAt(glm::vec3(0, 0, 0));
+	
+	keyLight.setup();
+	keyLight.enable();
+	keyLight.setAreaLight(1, 1);
+	keyLight.setAmbientColor(ofFloatColor(1, 1, 1));
+	keyLight.setDiffuseColor(ofFloatColor(1, 1, 1));
+	keyLight.setSpecularColor(ofFloatColor(1, 1, 1));
+
+	keyLight.rotate(45, ofVec3f(0, 1, 0));
+	keyLight.rotate(45, ofVec3f(1, 0, 0));
+	keyLight.setPosition(glm::vec3(0, 200, 0));
+	keyLight.lookAt(glm::vec3(0, 0, 0));
     
     
     // particle System with 1 particle
