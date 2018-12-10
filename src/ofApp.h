@@ -63,6 +63,8 @@ class ofApp : public ofBaseApp{
 		ofVec3f intersectPoint;
         const float selectionRange = 4.0;
     
+    
+    
     // imported from midterm lander
 
     ofxAssimpModelLoader lander;
@@ -70,15 +72,23 @@ class ofApp : public ofBaseApp{
     ofCamera *theCam = NULL;
     ofCamera topCam;
     
-    const float SPD = 1;
+    const float SPD = 2;
     ofPoint posUpdater;
+    
+    float altitude;
+    ofVec3f altPoint;
     
     ParticleSystem prover;
     Particle par;
     ofVec3f assigner;
-	
-    ImpulseRadialForce *exhaustForce;
+	ImpulseRadialForce *exhaustForce;
     ParticleEmitter exhaust;
+    
+    ParticleEmitter emitter;
+    
+    TurbulenceForce *turb2;
+    GravityForce *gravF;
+    ImpulseRadialForce *radF;
     
     Thruster *thrust;
     

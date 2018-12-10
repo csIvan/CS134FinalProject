@@ -56,6 +56,8 @@ void ofApp::setup(){
 	mars.setScaleNormalization(false);
 
 	boundingBox = meshBounds(mars.getMesh(0));
+    
+    altitude = 0;
 	
 
 
@@ -76,7 +78,7 @@ void ofApp::setup(){
     //
     if (lander.loadModel("geo/spaceShip.obj")) {
         lander.setScaleNormalization(false);
-        lander.setScale(.5, .5, .5);
+        lander.setScale(.25, .25, .25);
         lander.setRotation(0, -180, 1, 0, 0);
         lander.setPosition(0,0,0);
         
@@ -97,9 +99,12 @@ void ofApp::setup(){
     
     // setting up the vectors that move the particle
     thrust = new Thruster(ofVec3f(0,0,0));
-
     
-    //instantiate the force for the exhaust and add it to the exhaust's particle system.
+    // exhaust particles
+    turb2 = new TurbulenceForce(ofVec3f(-2,-2,-2),ofVec3f(2,2,2));
+    gravF = new GravityForce(ofVec3f(0,-50,0));
+    radF = new ImpulseRadialForce(100.0);
+
     exhaustForce = new ImpulseRadialForce(50);
     exhaust.sys->addForce(exhaustForce);
 
@@ -111,9 +116,11 @@ void ofApp::setup(){
     exhaust.setParticleRadius(.01);
     exhaust.setRate(35);
     
+    
     prover.addForce(turbForce);
     prover.addForce(thrust);
     
+	
 }
 
 //--------------------------------------------------------------
@@ -122,11 +129,12 @@ void ofApp::setup(){
 void ofApp::update() {
     prover.update();
     
-    assigner = prover.particles[0].position;
-    lander.setPosition(assigner.x , assigner.y , assigner.z);
-    //used the particle's position for the emitter because I wanted to change the y component to make it closer to the exhaust
     exhaust.setPosition(ofVec3f(prover.particles[0].position.x, prover.particles[0].position.y + .25, prover.particles[0].position.z));
     exhaust.update();
+    assigner = prover.particles[0].position;
+    lander.setPosition(assigner.x , assigner.y , assigner.z);
+    altRayDistance();
+    
 }
 //--------------------------------------------------------------
 void ofApp::draw(){
@@ -205,10 +213,9 @@ void ofApp::draw(){
 	for (int i = 0; i < level3.size(); i++)
 		drawBox(level3[i]);
 	*/
-    //prover.draw();
+
     lander.drawFaces();
     exhaust.draw();
-    
 	ofPopMatrix();
 	cam.end();
     
@@ -216,6 +223,11 @@ void ofApp::draw(){
     str += "Frame Rate: " + std::to_string(ofGetFrameRate());
     ofSetColor(ofColor::white);
     ofDrawBitmapString(str, ofGetWindowWidth() - 170, 15);
+    
+    string altistr;
+    altistr += "Altitude: " + std::to_string(altitude);
+    ofSetColor(ofColor::white);
+    ofDrawBitmapString(altistr, 15, 15);
 }
 
 // 
@@ -292,14 +304,14 @@ void ofApp::keyPressed(int key) {
 	case OF_KEY_DEL:
 		break;
         case OF_KEY_UP:
-	    exhaust.sys->reset();
-	    exhaust.start();
             // cout << lander.getPosition();
             // Using alt key to determine whether we change z or x
             
             if (!bAltKeyDown){
                 prover.reset();
                 thrust->set(ofVec3f(0,SPD,0));
+                exhaust.sys->reset();
+	    		exhaust.start();
             }
             else{
                 prover.reset();
@@ -308,8 +320,6 @@ void ofApp::keyPressed(int key) {
             }
             break;
         case OF_KEY_DOWN:
-	    exhaust.sys->reset();
-	    exhaust.start();
             if(!bAltKeyDown){
                 prover.reset();
                 thrust->set(ofVec3f(0,-SPD,0));
@@ -322,14 +332,10 @@ void ofApp::keyPressed(int key) {
             
             break;
         case OF_KEY_LEFT:
-	    exhaust.sys->reset();
-	    exhaust.start();
             prover.reset();
             thrust->set(ofVec3f(-SPD,0,0));
             break;
         case OF_KEY_RIGHT:
-	    exhaust.sys->reset();
-	    exhaust.start();
             prover.reset();
             thrust->set(ofVec3f(SPD,0,0));
             break;
@@ -367,7 +373,6 @@ void ofApp::keyReleased(int key) {
     case OF_KEY_LEFT:
     case OF_KEY_UP:
     case OF_KEY_DOWN:
-	exhaust.stop();
         prover.reset();
         thrust->set(ofVec3f(0,0,0));
         break;
@@ -412,8 +417,10 @@ void ofApp::mousePressed(int x, int y, int button) {
 		bPointSelected = true;
 
 		// print out to console the results of how long it took for the selection to elapse
-		cout << "Time elapsed for selection: " << (ofGetElapsedTimeMillis() - timer) << " ms." << endl;;
+		cout << "Time elapsed for selection: " << (ofGetElapsedTimeMillis() - timer) << " ms." << endl;
+       // cout << "Touched this point, int: " << selectionNode.points[0]<< endl;
 	}
+    
 }
 
 
@@ -653,4 +660,32 @@ bool ofApp::mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f &
 	ofVec3f rayDir = rayPoint - cam.getPosition();
 	rayDir.normalize();
 	return (rayIntersectPlane(rayPoint, rayDir, planePoint, planeNorm, point));
+}
+
+// Linhson
+void ofApp::altRayDistance(){
+    
+    // Create a ray where the point is the position of the spaceship
+    // and the direction is striaght down
+    ofVec3f rayPoint = prover.particles[0].position;
+    ofVec3f rayDir = ofVec3f(0,-1,0);
+    Ray ray = Ray(Vector3(rayPoint.x, rayPoint.y, rayPoint.z),
+                    Vector3(rayDir.x, rayDir.y, rayDir.z));
+    
+    TreeNode selectionNode;
+    octree.intersect(ray, octree.root, selectionNode);
+    
+    
+    // If the oct intersection returns a Node with a point
+    // set the altitude to the difference of the Ship position and that returned node point
+    if (selectionNode.points.size() > 0) {
+        altPoint = mars.getMesh(0).getVertex(selectionNode.points[0]);
+
+        ofVec3f resRay = rayPoint - altPoint;
+        altitude = resRay.y;
+
+    }
+    
+    
+    
 }

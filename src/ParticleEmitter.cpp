@@ -56,12 +56,12 @@ void ParticleEmitter::draw() {
 		case DirectionalEmitter:
 			ofDrawSphere(position, radius/10);  // just draw a small sphere for point emitters 
 			break;
+        
 		case SphereEmitter:
 		case RadialEmitter:
 			ofDrawSphere(position, radius/10);  // just draw a small sphere as a placeholder
 			break;
 		case DiskEmitter:
-			//ofDrawSphere(position, radius / 10);
 		default:
 			break;
 		}
@@ -134,12 +134,15 @@ void ParticleEmitter::spawn(float time) {
 		particle.velocity = velocity;
 		particle.position.set(position);
 		break;
-	case DiskEmitter:	//new emitter type: DiskEmitter
-		ofVec3f dir = ofVec3f(ofRandom(-.1,.1), -1.5, ofRandom(-.1, .1));
-		float speed = velocity.length();
-		particle.velocity = dir * speed;
-		//setting the position for the particles in the emitter, random positions for the emitter to emit disk-like emissions.
-		particle.position.set(ofVec3f(ofRandom(position.x-.16, position.x + .16), ofRandom(position.y-.04, position.y+.04), ofRandom(position.z-.16, position.z + .16)));
+    case DiskEmitter:
+        {
+            ofVec3f dir = ofVec3f(ofRandom(-.1,.1), -1.5, ofRandom(-.1, .1));
+            float speed = velocity.length();
+            particle.velocity = dir * speed;
+            particle.position.set(ofVec3f(ofRandom(position.x-.16, position.x + .16), ofRandom(position.y-.04, position.y+.04), ofRandom(position.z-.16, position.z + .16)));
+
+        }
+        break;
 	
 	}
 
