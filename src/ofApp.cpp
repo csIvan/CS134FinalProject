@@ -38,13 +38,14 @@ void ofApp::setup(){
 	bRoverLoaded = false;
 	bTerrainSelected = true;
 //	ofSetWindowShape(1024, 768);
-	cam.setDistance(10);
+	cam.setDistance(30);
 	cam.setNearClip(.1);
 	cam.setFov(65.5);   // approx equivalent to 28mm in 35mm format
 	ofSetVerticalSync(true);
 	cam.disableMouseInput();
 	ofEnableSmoothing();
 	ofEnableDepthTest();
+	theCam = &cam;
 
 	// setup rudimentary lighting 
 	//
@@ -88,6 +89,13 @@ void ofApp::setup(){
         cout << "Error: Can't load model" << "geo/spaceShip.obj" << endl;
         ofExit(0);
     }
+	
+    trackingCam.setFov(90);
+    trackingCam.setPosition(30, 10, 0);
+    sideCam.setFov(90);
+    downCam.setFov(90);
+    downCam.lookAt(glm::vec3(0, 0, 0));
+    
     
     // particle System with 1 particle
     prover.add(par);
@@ -139,6 +147,18 @@ void ofApp::update() {
     exhaust.update();
     assigner = prover.particles[0].position;
     lander.setPosition(assigner.x , assigner.y , assigner.z);
+	
+	
+    //Tracking Camera
+    trackingCam.setPosition(glm::vec3(lander.getPosition().x + 10, lander.getPosition().y + 2, lander.getPosition().z + 10));
+    trackingCam.lookAt(glm::vec3(lander.getPosition().x, lander.getPosition().y + 2, lander.getPosition().z));
+    //side view camera
+    sideCam.setPosition(glm::vec3(lander.getPosition().x - 1, lander.getPosition().y + 4, lander.getPosition().z));
+    sideCam.lookAt(glm::vec3(glm::vec3(lander.getPosition().x + .30, lander.getPosition().y + 4, lander.getPosition().z)));
+    //ground view camera
+    downCam.setPosition(glm::vec3(lander.getPosition().x, lander.getPosition().y + 5, lander.getPosition().z));
+    downCam.lookAt(glm::vec3(glm::vec3(prover.particles[0].position.x, -1*(prover.particles[0].position.y + .30), prover.particles[0].position.z)));
+	
     altRayDistance();
     
     
@@ -172,7 +192,7 @@ void ofApp::draw(){
         ofPopMatrix();
     }
     
-    cam.begin();
+    theCam->begin();
 	ofPushMatrix();
 	if (bWireframe) {                    // wireframe mode  (include axis)
 		ofDisableLighting();
@@ -244,7 +264,7 @@ void ofApp::draw(){
     lander.drawFaces();
     exhaust.draw();
 	ofPopMatrix();
-	cam.end();
+	theCam->end();
     
     string str;
     str += "Frame Rate: " + std::to_string(ofGetFrameRate());
@@ -288,6 +308,26 @@ void ofApp::drawAxis(ofVec3f location) {
 void ofApp::keyPressed(int key) {
 
 	switch (key) {
+	case '1':
+		theCam = &cam;
+		break;
+	case '2':
+		theCam = &trackingCam;
+		break;
+	case '3':
+		theCam = &sideCam;
+		break;
+	case '4':
+		theCam = &downCam;
+		break;
+	case '5':
+		direc = lander.getPosition() - theCam->getPosition();
+		theCam->setPosition(theCam->getPosition() + (direc.getNormalized() * .2));
+		break;
+	case '6':
+		direc = lander.getPosition() - theCam->getPosition();
+		theCam->setPosition(theCam->getPosition() + (direc.getNormalized() * -.2));
+		break;
 	case 'C':
 	case 'c':
 		if (cam.getMouseInputEnabled()) cam.disableMouseInput();
