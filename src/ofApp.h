@@ -72,11 +72,13 @@ class ofApp : public ofBaseApp{
     ofxAssimpModelLoader lander;
     ofImage backgroundImage;
     ofCamera *theCam = NULL;
+    ofCamera topCam;
+    
     ofCamera trackingCam;
     ofCamera sideCam;
     ofCamera downCam;
-	
     
+    ofVec3f direc;
     const float SPD = 2;
     ofPoint posUpdater;
     
@@ -111,5 +113,8 @@ class ofApp : public ofBaseApp{
     
     bool colDetected = false;
     ImpulseForce *resForce;
+    
+    ofSoundPlayer ufo;
+    bool soundSet = false;
 		
 };

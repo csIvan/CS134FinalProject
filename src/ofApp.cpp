@@ -45,7 +45,7 @@ void ofApp::setup(){
 	cam.disableMouseInput();
 	ofEnableSmoothing();
 	ofEnableDepthTest();
-	theCam = &cam;
+    theCam = &cam;
 
 	// setup rudimentary lighting 
 	//
@@ -71,7 +71,8 @@ void ofApp::setup(){
     
     // load BG image
     //
-    bBackgroundLoaded = backgroundImage.load("images/starfield-plain.jpg");
+    bBackgroundLoaded = backgroundImage.load("images/starry_bg.jpg");
+    backgroundImage.resize(ofGetWidth(), ofGetHeight());
     
     // load lander model
     //
@@ -89,7 +90,7 @@ void ofApp::setup(){
         cout << "Error: Can't load model" << "geo/spaceShip.obj" << endl;
         ofExit(0);
     }
-	
+    
     trackingCam.setFov(90);
     trackingCam.setPosition(30, 10, 0);
     sideCam.setFov(90);
@@ -134,7 +135,10 @@ void ofApp::setup(){
     prover.particles[0].position = ofVec3f(0,90,0);
     cam.setPosition(ofVec3f(0,50,0));
     
-	//Vector3 boxPts[8];
+    
+    //setup for ufo audio
+    if(ufo.load("ufo.mp3"))
+        soundSet = true;
 }
 
 //--------------------------------------------------------------
@@ -147,8 +151,8 @@ void ofApp::update() {
     exhaust.update();
     assigner = prover.particles[0].position;
     lander.setPosition(assigner.x , assigner.y , assigner.z);
-	
-	
+    altRayDistance();
+    
     //Tracking Camera
     trackingCam.setPosition(glm::vec3(lander.getPosition().x + 10, lander.getPosition().y + 2, lander.getPosition().z + 10));
     trackingCam.lookAt(glm::vec3(lander.getPosition().x, lander.getPosition().y + 2, lander.getPosition().z));
@@ -158,8 +162,6 @@ void ofApp::update() {
     //ground view camera
     downCam.setPosition(glm::vec3(lander.getPosition().x, lander.getPosition().y + 5, lander.getPosition().z));
     downCam.lookAt(glm::vec3(glm::vec3(prover.particles[0].position.x, -1*(prover.particles[0].position.y + .30), prover.particles[0].position.z)));
-	
-    altRayDistance();
     
     
     // updates the collision box of the space ship
@@ -185,13 +187,14 @@ void ofApp::draw(){
     if (bBackgroundLoaded) {
         ofPushMatrix();
         ofDisableDepthTest();
-        ofSetColor(50, 50, 50);
-        ofScale(2, 2);
-        backgroundImage.draw(-200, -100);
+        //ofSetColor(50, 50, 50);
+        //ofScale(2, 2);
+        backgroundImage.draw(0, 0);
         ofEnableDepthTest();
         ofPopMatrix();
     }
     
+    cam.begin();
     theCam->begin();
 	ofPushMatrix();
 	if (bWireframe) {                    // wireframe mode  (include axis)
@@ -264,7 +267,8 @@ void ofApp::draw(){
     lander.drawFaces();
     exhaust.draw();
 	ofPopMatrix();
-	theCam->end();
+	cam.end();
+    theCam->end();
     
     string str;
     str += "Frame Rate: " + std::to_string(ofGetFrameRate());
@@ -308,26 +312,26 @@ void ofApp::drawAxis(ofVec3f location) {
 void ofApp::keyPressed(int key) {
 
 	switch (key) {
-	case '1':
-		theCam = &cam;
-		break;
-	case '2':
-		theCam = &trackingCam;
-		break;
-	case '3':
-		theCam = &sideCam;
-		break;
-	case '4':
-		theCam = &downCam;
-		break;
-	case '5':
-		direc = lander.getPosition() - theCam->getPosition();
-		theCam->setPosition(theCam->getPosition() + (direc.getNormalized() * .2));
-		break;
-	case '6':
-		direc = lander.getPosition() - theCam->getPosition();
-		theCam->setPosition(theCam->getPosition() + (direc.getNormalized() * -.2));
-		break;
+        case '1':
+            theCam = &cam;
+            break;
+        case '2':
+            theCam = &trackingCam;
+            break;
+        case '3':
+            theCam = &sideCam;
+            break;
+        case '4':
+            theCam = &downCam;
+            break;
+        case '5':
+            theCam = &cam;
+            theCam->setPosition(glm::vec3(lander.getPosition().x + 10, lander.getPosition().y + 2, lander.getPosition().z + 10));
+            break;
+        case '6':
+            direc = lander.getPosition() - theCam->getPosition();
+            theCam->setPosition(theCam->getPosition() + (direc.getNormalized() * -.2));
+            break;
 	case 'C':
 	case 'c':
 		if (cam.getMouseInputEnabled()) cam.disableMouseInput();
@@ -394,6 +398,7 @@ void ofApp::keyPressed(int key) {
                 thrust->set(ofVec3f(0,SPD,0));
                 exhaust.sys->reset();
 	    		exhaust.start();
+                ufo.play();
             }
             else{
                 prover.reset();
