@@ -117,6 +117,9 @@ class ofApp : public ofBaseApp{
     ofSoundPlayer ufo;
     bool soundSet = false;
     
+    ofSoundPlayer theme;
+    bool tmSet = false;
+    
     bool intPtsToggle = false;
 		
 };

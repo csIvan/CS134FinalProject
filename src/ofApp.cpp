@@ -133,13 +133,22 @@ void ofApp::setup(){
     
     shipBox = Box(Vector3(-1,-1,-1),Vector3(1,1,1));
     
-    prover.particles[0].position = ofVec3f(0,10,0);
-    cam.setPosition(ofVec3f(0,50,0));
+    prover.particles[0].position = ofVec3f(-20,5,0);
+    cam.setPosition(ofVec3f(-20,0,0));
     
     
     //setup for ufo audio
     if(ufo.load("ufo.mp3"))
         soundSet = true;
+    
+    //setup for theme audio
+    if(theme.load("space_theme.mp3"))
+        tmSet = true;
+    
+    if(tmSet){
+        theme.setVolume(.5);
+        theme.play();
+    }
     
     //light setup
     keyLight.setup();
@@ -365,6 +374,7 @@ void ofApp::keyPressed(int key) {
 		setCameraTarget();
 		break;
 	case 'u':
+        theme.stop();
 		break;
 	case 'v':
 		togglePointsDisplay();
