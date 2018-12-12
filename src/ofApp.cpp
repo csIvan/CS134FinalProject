@@ -1,27 +1,28 @@
 
 //--------------------------------------------------------------
+//  Student Name:   < Ivan Hernandez , Linhson Bui>
+//  Date: <12/13/2018>
 //
-//  Kevin M. Smith
+//  Space Ship Spotted - CS134 Final Project
+//  In this game you are exploring an unknown land
+//      as an alien in a flying saucer
+//  You want to find and abduct any cows you can find
+//  Unforunately for you, there is no source of water in this land
+//  That means no form of life, that includes cows
 //
-//  Mars HiRise Project - startup scene
-// 
-//  This is an openFrameworks 3D scene that includes an EasyCam
-//  and example 3D geometry which I have reconstructed from Mars
-//  HiRis photographs taken the Mars Reconnaisance Orbiter
+//  We are using octrees to determine an intersection
+//  and phyics to resolve the collision
+//  Cameras are set up to track the ship, see a bottom view from the ship
+//      see a side view from the ship, and a free view of the ship
 //
-//  You will use this source file (and include file) as a starting point
-//  to implement assignment 5  (Parts I and II)
+//  Use the arrows keys to move around
+//  keys 1-5 change the camera angles
+//  p toggles the points of collision we are testing for intersection
+//  c enables movement of the camera
+//  w toggles the wireframe of the terrain
 //
-//  Please do not modify any of the keymappings.  I would like 
-//  the input interface to be the same for each student's 
-//  work.  Please also add your name/date below.
-
-//  Please document/comment all of your work !
-//  Have Fun !!
 //
-//  Student Name:   < Ivan Hernandez >
-//  Date: <11/15/2018>
-
+//
 
 #include "ofApp.h"
 #include "Util.h"
@@ -51,7 +52,7 @@ void ofApp::setup(){
 	//
 	initLightingAndMaterials();
 
-	mars.loadModel("geo/terrain.obj");
+	mars.loadModel("geo/terrain_v2.obj");
 	mars.setScaleNormalization(false);
 
 	boundingBox = meshBounds(mars.getMesh(0));
@@ -96,18 +97,6 @@ void ofApp::setup(){
     sideCam.setFov(90);
     downCam.setFov(90);
     downCam.lookAt(glm::vec3(0, 0, 0));
-	
-	keyLight.setup();
-	keyLight.enable();
-	keyLight.setAreaLight(1, 1);
-	keyLight.setAmbientColor(ofFloatColor(1, 1, 1));
-	keyLight.setDiffuseColor(ofFloatColor(1, 1, 1));
-	keyLight.setSpecularColor(ofFloatColor(1, 1, 1));
-
-	keyLight.rotate(45, ofVec3f(0, 1, 0));
-	keyLight.rotate(45, ofVec3f(1, 0, 0));
-	keyLight.setPosition(glm::vec3(0, 200, 0));
-	keyLight.lookAt(glm::vec3(0, 0, 0));
     
     
     // particle System with 1 particle
@@ -144,13 +133,27 @@ void ofApp::setup(){
     
     shipBox = Box(Vector3(-1,-1,-1),Vector3(1,1,1));
     
-    prover.particles[0].position = ofVec3f(0,90,0);
+    prover.particles[0].position = ofVec3f(0,10,0);
     cam.setPosition(ofVec3f(0,50,0));
     
     
     //setup for ufo audio
     if(ufo.load("ufo.mp3"))
         soundSet = true;
+    
+    //light setup
+    keyLight.setup();
+    keyLight.enable();
+    keyLight.setAreaLight(1, 1);
+    keyLight.setAmbientColor(ofFloatColor(1, 1, 1));
+    keyLight.setDiffuseColor(ofFloatColor(1, 1, 1));
+    keyLight.setSpecularColor(ofFloatColor(1, 1, 1));
+    
+    keyLight.rotate(45, ofVec3f(0, 1, 0));
+    keyLight.rotate(45, ofVec3f(1, 0, 0));
+    keyLight.setPosition(glm::vec3(0, 200, 0));
+    keyLight.lookAt(glm::vec3(0, 0, 0));
+    
 }
 
 //--------------------------------------------------------------
@@ -168,9 +171,13 @@ void ofApp::update() {
     //Tracking Camera
     trackingCam.setPosition(glm::vec3(lander.getPosition().x + 10, lander.getPosition().y + 2, lander.getPosition().z + 10));
     trackingCam.lookAt(glm::vec3(lander.getPosition().x, lander.getPosition().y + 2, lander.getPosition().z));
+    
+    
     //side view camera
     sideCam.setPosition(glm::vec3(lander.getPosition().x - 1, lander.getPosition().y + 4, lander.getPosition().z));
     sideCam.lookAt(glm::vec3(glm::vec3(lander.getPosition().x + .30, lander.getPosition().y + 4, lander.getPosition().z)));
+    
+    
     //ground view camera
     downCam.setPosition(glm::vec3(lander.getPosition().x, lander.getPosition().y + 5, lander.getPosition().z));
     downCam.lookAt(glm::vec3(glm::vec3(prover.particles[0].position.x, -1*(prover.particles[0].position.y + .30), prover.particles[0].position.z)));
@@ -180,9 +187,14 @@ void ofApp::update() {
     shipBox.parameters[0] = Vector3(assigner.x , assigner.y , assigner.z) + Vector3(-1.7,0,-1.7);
     shipBox.parameters[1] =Vector3(assigner.x , assigner.y , assigner.z) + Vector3(1.7,1.75,1.7);
     // dimension of our shipBox is 3.4 x 1.75. 3.4
+    // dont know how to get dimensions from model directly so box is hard coded
 
+    
+    // looks for collisions every frame
     collisionDect();
     
+    
+    // if there is a collision, turn off the turbulence force
     if (colDetected == true){
         turbForce->set(ofVec3f(0,0,0), ofVec3f(0,0,0));
         resCollision();
@@ -192,15 +204,11 @@ void ofApp::update() {
 }
 //--------------------------------------------------------------
 void ofApp::draw(){
-
-//	ofBackgroundGradient(ofColor(20), ofColor(0));   // pick your own backgroujnd
-	//ofBackground(ofColor::black);
-//	cout << ofGetFrameRate() << endl;
+    
+    // draws the background if one is loaded
     if (bBackgroundLoaded) {
         ofPushMatrix();
         ofDisableDepthTest();
-        //ofSetColor(50, 50, 50);
-        //ofScale(2, 2);
         backgroundImage.draw(0, 0);
         ofEnableDepthTest();
         ofPopMatrix();
@@ -246,35 +254,13 @@ void ofApp::draw(){
 	
 	ofNoFill();
 	ofSetColor(ofColor::white);
-	//drawBox(boundingBox);
 
-	// Drawing the Octree by passing the root, the number of levels
-	// to be drawn, the initial level to start drawing, and the first 
-	// color number for the switch statement
-	//octree.draw(octree.root, 6, 0, 0);
-
-
-	// Some debug code to test subdivideBox8
-	//
-	/*ofSetColor(ofColor::red);
-	for (int i=0; i < level1.size(); i++)
-		drawBox(level1[i]);
-	
-	ofSetColor(ofColor::blue);
-	for (int i = 0; i < level2.size(); i++)
-		drawBox(level2[i]);
-
-	ofSetColor(ofColor::yellow);
-	for (int i = 0; i < level3.size(); i++)
-		drawBox(level3[i]);
-	*/
+    if (intPtsToggle == true){
+        for(int i = 0; i <6; i++)
+            ofDrawSphere(boxPts[i].x(),boxPts[i].y(),boxPts[i].z(),.05);
+    }
     
-    
-    //drawBox(shipBox);
-    for(int i = 0; i <6; i++)
-        ofDrawSphere(boxPts[i].x(),boxPts[i].y(),boxPts[i].z(),.05);
-        
-    
+    //keyLight.draw();
     
     lander.drawFaces();
     exhaust.draw();
@@ -339,6 +325,7 @@ void ofApp::keyPressed(int key) {
         case '5':
             theCam = &cam;
             theCam->setPosition(glm::vec3(lander.getPosition().x + 10, lander.getPosition().y + 2, lander.getPosition().z + 10));
+            theCam->lookAt(glm::vec3(lander.getPosition().x, lander.getPosition().y + 2, lander.getPosition().z));
             break;
         case '6':
             direc = lander.getPosition() - theCam->getPosition();
@@ -358,19 +345,16 @@ void ofApp::keyPressed(int key) {
 		break;
     case 'i':
         {
-            /*
-             // For wall collisions
-            ofVec3f vel = prover.particles[0].velocity;
-            vel.x *= -ofGetFrameRate();
-            vel.z *= -ofGetFrameRate();
-            resForce->apply(vel);
-             */
-             // For floor collisions
+            // used for testing collisions
              ofVec3f vel = prover.particles[0].velocity;
              resForce->apply(-ofGetFrameRate()*vel);
             
             break;
         }
+    case 'p':
+            intPtsToggle = !intPtsToggle;
+        break;
+            
 	case 'r':
 		cam.reset();
 		break;
@@ -402,9 +386,8 @@ void ofApp::keyPressed(int key) {
 	case OF_KEY_DEL:
 		break;
         case OF_KEY_UP:
-            // cout << lander.getPosition();
+
             // Using alt key to determine whether we change z or x
-            
             if (!bAltKeyDown){
                 prover.reset();
                 thrust->set(ofVec3f(0,SPD,0));
@@ -470,6 +453,7 @@ void ofApp::keyReleased(int key) {
 		break;
     case OF_KEY_UP:
             exhaust.sys->reset();
+            ufo.stop();
         exhaust.stop();
     case OF_KEY_RIGHT:
     case OF_KEY_LEFT:
@@ -492,35 +476,6 @@ void ofApp::mouseMoved(int x, int y ){
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button) {
-    ofVec3f mouse(mouseX, mouseY);
-	ofVec3f rayPoint = cam.screenToWorld(mouse);
-	ofVec3f rayDir = rayPoint - cam.getPosition();
-	rayDir.normalize();
-	Ray ray = Ray(Vector3(rayPoint.x, rayPoint.y, rayPoint.z),
-		Vector3(rayDir.x, rayDir.y, rayDir.z));
-	//if (level3[1].intersect(ray, -1000, 1000)) cout << "intersects" << endl;
-
-	// record the timer for when the selection is made
-	timer = ofGetElapsedTimeMillis();
-
-    
-    
-	// create TreeNode to serve as the returned node that intersect() uses to mark the selection
-	TreeNode selectionNode;
-	octree.intersect(ray, octree.root, selectionNode);
-    
-    bPointSelected = false;
-
-	// if the selectionNode's size is greater than 0, set bPointSelected to true, so that it 
-	// draws the sphere in the location that was selected.
-	if (selectionNode.points.size() > 0) {
-		selectedPoint = mars.getMesh(0).getVertex(selectionNode.points[0]);
-		bPointSelected = true;
-
-		// print out to console the results of how long it took for the selection to elapse
-		cout << "Time elapsed for selection: " << (ofGetElapsedTimeMillis() - timer) << " ms." << endl;
-       // cout << "Touched this point, int: " << selectionNode.points[0]<< endl;
-	}
     
 }
 
@@ -596,7 +551,6 @@ void ofApp::subDivideBox8(const Box &box, vector<Box> & boxList) {
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button) {
 
-
 }
 
 //--------------------------------------------------------------
@@ -604,62 +558,8 @@ void ofApp::mouseReleased(int x, int y, int button) {
 
 }
 
-
-//
-//  ScreenSpace Selection Method: 
-//  This is not the octree method, but will give you an idea of comparison
-//  of speed between octree and screenspace.
-//
-//  Select Target Point on Terrain by comparing distance of mouse to 
-//  vertice points projected onto screenspace.
-//  if a point is selected, return true, else return false;
-//
 bool ofApp::doPointSelection() {
 
-	ofMesh mesh = mars.getMesh(0);
-	int n = mesh.getNumVertices();
-	float nearestDistance = 0;
-	int nearestIndex = 0;
-
-	bPointSelected = false;
-
-	ofVec2f mouse(mouseX, mouseY);
-	vector<ofVec3f> selection;
-
-	// We check through the mesh vertices to see which ones
-	// are "close" to the mouse point in screen space.  If we find 
-	// points that are close, we store them in a vector (dynamic array)
-	//
-	for (int i = 0; i < n; i++) {
-		ofVec3f vert = mesh.getVertex(i);
-		ofVec3f posScreen = cam.worldToScreen(vert);
-		float distance = posScreen.distance(mouse);
-		if (distance < selectionRange) {
-			selection.push_back(vert);
-			bPointSelected = true;
-		}
-	}
-
-	//  if we found selected points, we need to determine which
-	//  one is closest to the eye (camera). That one is our selected target.
-	//
-	if (bPointSelected) {
-		float distance = 0;
-		for (int i = 0; i < selection.size(); i++) {
-			ofVec3f point =  cam.worldToCamera(selection[i]);
-
-			// In camera space, the camera is at (0,0,0), so distance from 
-			// the camera is simply the length of the point vector
-			//
-			float curDist = point.length(); 
-
-			if (i == 0 || curDist < distance) {
-				distance = curDist;
-				selectedPoint = selection[i];
-			}
-		}
-	}
-	return bPointSelected;
 }
 
 // Set the camera to use the selected point as it's new target
@@ -763,7 +663,10 @@ bool ofApp::mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f &
 	return (rayIntersectPlane(rayPoint, rayDir, planePoint, planeNorm, point));
 }
 
-// Linhson
+// Linhson Bui
+// Casts a ray downwards from the ship until it collides with the terrain
+// Calculates the distance and displays that on screen
+//
 void ofApp::altRayDistance(){
     
     // Create a ray where the point is the position of the spaceship
@@ -787,30 +690,39 @@ void ofApp::altRayDistance(){
     }
 }
 
+// Linhson Bui
+// Detects collision using the center of each face of the bound box of the ship
+//
 void ofApp::collisionDect(){
 
     if(colDetected == false){
         
-        ofVec3f vel = prover.particles[0].velocity;
-        if (vel.y > 0) return;
-        
-        //gets the center of each box face
+        // gets the center of each box face and puts thm
+        // into an array
         boxPts[0] = shipBox.max() + Vector3(-shipW/2,0,-shipL/2);
         boxPts[1] = shipBox.min() + Vector3(0,shipH/2,shipL/2);
         boxPts[2] = shipBox.min() + Vector3(shipW/2,shipH/2,0);
         boxPts[3] = shipBox.max() + Vector3(0,-shipH/2,-shipL/2);
         boxPts[4] = shipBox.max() + Vector3(-shipW/2, -shipH/2,0);
         boxPts[5] = shipBox.min() + Vector3(shipW/2,0,shipL/2);
-    
+        
+        // return of the ship is moving upwards
+        // we have no ceilings in this terrain
+        ofVec3f vel = prover.particles[0].velocity;
+        if (vel.y > 0) return;
+        
         int i = 0;
         
         TreeNode selectionNode;
         
+        // we traverse through that array
+        // seeing if they intersect with the terrain octree
+        // once 1 is found set colDetected to true
         while( i < 8 && colDetected == false){
             
             octree.intersect(boxPts[i], octree.root, selectionNode);
             if(selectionNode.points.size() > 0){
-                cout << "Collision Detected" << endl;
+               // cout << "Collision Detected" << endl;
                 colDetected = true;
             }
             else i++;
@@ -818,23 +730,25 @@ void ofApp::collisionDect(){
     }
 }
 
+// Linhson Bui
+// Applies the resolution force to the ship if there is a collision
+//
 void ofApp::resCollision(){
     
+    // stops checking for collision of the ship stops moving in the y direction
     ofVec3f vel = prover.particles[0].velocity;
     if (vel.y == 0){
         return;
     }
     
+    // applying the formula from the lecture
     ofVec3f n = vel;
     n.normalize();
-    ofVec3f n2 = n;
-    n2.x *= -1;
     float dot = (-vel.x * n.x) + (-vel.y * n.y) + (-vel.z * n.z);
     ofVec3f resVec = 1.2 * dot * n;
     
     resForce->apply(ofGetFrameRate()*resVec);
-    //resForce->apply(ofGetFrameRate()*resVec);
-    cout << "ResForce applied" << endl;
+    //cout << "ResForce applied" << endl;
     colDetected = false;
     
 }
