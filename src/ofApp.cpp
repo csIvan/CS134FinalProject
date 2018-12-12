@@ -52,6 +52,7 @@ void ofApp::setup(){
 	//
 	initLightingAndMaterials();
 
+	//Ivan Hernandez - Created the alien terrain in Maya
 	mars.loadModel("geo/terrain_v2.obj");
 	mars.setScaleNormalization(false);
 
@@ -61,6 +62,7 @@ void ofApp::setup(){
 	
 
 
+	// Ivan Hernandez - Worked on the Octree Implementation
 	// Create the Octree by passing in the mesh and the amount of levels
 	octree.create(mars.getMesh(0), 8);
 
@@ -75,8 +77,8 @@ void ofApp::setup(){
     bBackgroundLoaded = backgroundImage.load("images/starry_bg.jpg");
     backgroundImage.resize(ofGetWidth(), ofGetHeight());
     
+    // Ivan Hernandez - Created the spaceship in Maya
     // load lander model
-    //
     if (lander.loadModel("geo/spaceShip.obj")) {
         lander.setScaleNormalization(false);
         lander.setScale(.25, .25, .25);
@@ -150,7 +152,7 @@ void ofApp::setup(){
         theme.play();
     }
     
-    //light setup
+    //Ivan Hernandez - light setup
     keyLight.setup();
     keyLight.enable();
     keyLight.setAreaLight(1, 1);
@@ -167,7 +169,6 @@ void ofApp::setup(){
 
 //--------------------------------------------------------------
 // incrementally update scene (animation)
-//
 void ofApp::update() {
     prover.update();
     
@@ -177,6 +178,7 @@ void ofApp::update() {
     lander.setPosition(assigner.x , assigner.y , assigner.z);
     altRayDistance();
     
+    //Ivan Hernandez - Worked on the code for the different types of Cameras
     //Tracking Camera
     trackingCam.setPosition(glm::vec3(lander.getPosition().x + 10, lander.getPosition().y + 2, lander.getPosition().z + 10));
     trackingCam.lookAt(glm::vec3(lander.getPosition().x, lander.getPosition().y + 2, lander.getPosition().z));
